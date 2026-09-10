@@ -387,7 +387,7 @@ class _WithdrawalsTabState extends State<_WithdrawalsTab> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(w['email'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                Text('LKR ${(w['amount'] as num).abs()}', style: const TextStyle(color: AppColors.hint, fontSize: 12)),
+                Text('LKR ${num.parse(w['amount'].toString()).abs()}', style: const TextStyle(color: AppColors.hint, fontSize: 12)),
                 Text('${w['bank_name'] ?? ''} · ${w['bank_account_name'] ?? ''}', style: const TextStyle(color: AppColors.hint, fontSize: 11)),
                 Text('A/C: ${w['bank_account_number'] ?? ''} · ${w['bank_branch'] ?? ''}', style: const TextStyle(color: AppColors.hint, fontSize: 11)),
                 const SizedBox(height: 10),

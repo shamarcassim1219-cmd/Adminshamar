@@ -96,7 +96,7 @@ class _DisputesScreenState extends State<DisputesScreen> {
                               children: [
                                 Text(d['listingTitle'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                                 const SizedBox(height: 4),
-                                Text('LKR ${(d['price'] as num).toStringAsFixed(2)}', style: const TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.bold)),
+                                Text('LKR ${num.parse(d['price'].toString()).toStringAsFixed(2)}', style: const TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.bold)),
                                 Text('Buyer: ${d['buyerEmail']}  ·  Seller: ${d['sellerEmail']}', style: const TextStyle(color: AppColors.hint, fontSize: 11)),
                                 const SizedBox(height: 8),
                                 Container(

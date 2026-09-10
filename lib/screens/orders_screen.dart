@@ -82,7 +82,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                   ),
                                   title: Text(o['title'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                                   subtitle: Text(
-                                    'LKR ${(o['price'] as num).toStringAsFixed(2)}\nBuyer: ${o['buyerEmail']}\nSeller: ${o['sellerEmail']}',
+                                    'LKR ${num.parse(o['price'].toString()).toStringAsFixed(2)}\nBuyer: ${o['buyerEmail']}\nSeller: ${o['sellerEmail']}',
                                     style: const TextStyle(color: AppColors.hint, fontSize: 11),
                                   ),
                                   trailing: overdue
