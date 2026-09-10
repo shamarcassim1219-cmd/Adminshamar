@@ -412,4 +412,3 @@ class _WithdrawalsTabState extends State<_WithdrawalsTab> {
     );
   }
 }
-Eof
