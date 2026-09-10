@@ -27,6 +27,8 @@ jobs:
       - name: Generate missing platform folders
         run: flutter create --platforms=android --project-name mygame_admin_app --org com.mygame.admin .
 
+      - name: Fix Kotlin Gradle plugin
+        run: sed -i "s/org.jetbrains.kotlin.android.*version.*=.*$/org.jetbrains.kotlin.android version '1.9.24'/" android/settings.gradle
       - name: Install dependencies
         run: flutter pub get
 
