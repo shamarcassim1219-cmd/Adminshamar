@@ -106,6 +106,11 @@ class ApiService {
     await _handle(res);
   }
 
+  static Future<void> releaseEscrow(int orderId) async {
+    final res = await http.post(Uri.parse('$baseUrl/admin-chat/orders/$orderId/release-escrow'), headers: await _headers());
+    await _handle(res);
+  }
+
   static Future<List<dynamic>> getOrderConversations(int orderId) async {
     final res = await http.get(Uri.parse('$baseUrl/admin-chat/orders/$orderId/conversations'), headers: await _headers());
     final data = await _handle(res);
