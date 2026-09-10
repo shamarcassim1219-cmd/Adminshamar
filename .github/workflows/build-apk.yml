@@ -1,0 +1,60 @@
+name: Build Admin APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+
+      - name: Generate missing platform folders
+        run: flutter create --platforms=android --project-name mygame_admin_app --org com.mygame.admin .
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Fix applicationId
+        run: |
+          sed -i 's/applicationId = "com.mygame.admin.mygame_admin_app"/applicationId = "com.mygame.admin"/' android/app/build.gradle
+          sed -i 's/applicationId "com.mygame.admin.mygame_admin_app"/applicationId "com.mygame.admin"/' android/app/build.gradle
+
+      - name: Bump minSdkVersion to 23
+        run: sed -i 's/flutter.minSdkVersion/23/' android/app/build.gradle
+
+      - name: Ensure INTERNET permission
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          grep -q "android.permission.INTERNET" "$MANIFEST" || sed -i '/<\/manifest>/i\    <uses-permission android:name="android.permission.INTERNET" \/>' "$MANIFEST"
+
+      - name: Generate debug keystore if missing
+        run: |
+          if [ ! -f ~/.android/debug.keystore ]; then
+            mkdir -p ~/.android
+            keytool -genkeypair -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mygame-admin-release
+          path: build/app/outputs/flutter-apk/app-release.apk
