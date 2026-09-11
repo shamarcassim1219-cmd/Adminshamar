@@ -4,6 +4,7 @@ import '../services/api_service.dart';
 import 'login_screen.dart';
 import 'users_screen.dart';
 import 'promotions_admin_screen.dart';
+import 'sub_admin_management_screen.dart';
 
 class SettingsAdminScreen extends StatefulWidget {
   const SettingsAdminScreen({super.key});
@@ -98,6 +99,9 @@ class _SettingsAdminScreenState extends State<SettingsAdminScreen> {
           }),
           _tile(Icons.campaign_outlined, 'Promotions', 'Post and manage ads', () {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const PromotionsAdminScreen()));
+          }),
+          _tile(Icons.admin_panel_settings_outlined, 'Sub-Admins', 'Requests, devices, email, reports', () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const SubAdminManagementScreen()));
           }),
 
           const SizedBox(height: 20),
