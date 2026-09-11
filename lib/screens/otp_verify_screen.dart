@@ -33,35 +33,14 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
       await ApiService.verifyLogin(widget.email, code);
 
       try {
-        final settings = await FirebaseMessaging.instance.requestPermission(
+        await FirebaseMessaging.instance.requestPermission(
           alert: true,
           badge: true,
           sound: true,
         );
         final fcmToken = await FirebaseMessaging.instance.getToken();
-        if (fcmToken != null) {
-          await ApiService.saveFcmToken(fcmToken);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('FCM OK: perm=${settings.authorizationStatus} token=${fcmToken.substring(0, 12)}...'), duration: const Duration(seconds: 6)),
-            );
-          }
-        } else {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('FCM token NULL, perm=${settings.authorizationStatus}'), duration: const Duration(seconds: 6)),
-            );
-          }
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('FCM ERROR: $e'), duration: const Duration(seconds: 8)),
-          );
-        }
-      }
-
-      await Future.delayed(const Duration(seconds: 4));
+        if (fcmToken != null) await ApiService.saveFcmToken(fcmToken);
+      } catch (_) {}
 
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(

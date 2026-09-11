@@ -27,22 +27,10 @@ jobs:
       - name: Generate missing platform folders
         run: flutter create --platforms=android --project-name mygame_admin_app --org com.mygame.admin .
 
-      - name: Restore Firebase config
-        run: echo "${{ secrets.FIREBASE_ANDROID_CONFIG }}" | base64 --decode > android/app/google-services.json
-
-      - name: Validate google-services.json
-        run: python3 -c "import json; json.load(open('android/app/google-services.json'))"
-
       - name: Fix Kotlin Gradle plugin
         run: |
           sed -i 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.9.24"/' android/settings.gradle
           sed -i "s/id 'org.jetbrains.kotlin.android' version '[^']*'/id 'org.jetbrains.kotlin.android' version '1.9.24'/" android/settings.gradle
-
-      - name: Add Firebase Google Services plugin settings
-        run: sed -i '/id "dev.flutter.flutter-plugin-loader"/a\    id "com.google.gms.google-services" version "4.4.2" apply false' android/settings.gradle
-
-      - name: Add Firebase Google Services plugin app
-        run: sed -i '/id "dev.flutter.flutter-gradle-plugin"/a\    id "com.google.gms.google-services"' android/app/build.gradle
 
       - name: Install dependencies
         run: flutter pub get
@@ -51,17 +39,6 @@ jobs:
         run: |
           sed -i 's/applicationId = "com.mygame.admin.mygame_admin_app"/applicationId = "com.mygame.admin"/' android/app/build.gradle
           sed -i 's/applicationId "com.mygame.admin.mygame_admin_app"/applicationId "com.mygame.admin"/' android/app/build.gradle
-
-      - name: DEBUG - print applicationId and google-services.json package
-        run: |
-          echo "=== build.gradle applicationId lines ==="
-          grep -n "applicationId" android/app/build.gradle
-          echo "=== google-services.json packages ==="
-          python3 -c "import json; d=json.load(open('android/app/google-services.json')); [print(c['client_info']['android_client_info']['package_name']) for c in d['client']]"
-          echo "=== app/build.gradle plugins block ==="
-          grep -n -A 5 "^plugins {" android/app/build.gradle
-          echo "=== settings.gradle plugins block ==="
-          grep -n -A 8 "^plugins {" android/settings.gradle
 
       - name: Bump minSdkVersion to 23
         run: sed -i 's/flutter.minSdkVersion/23/' android/app/build.gradle
@@ -85,22 +62,7 @@ jobs:
           fi
 
       - name: Build APK
-        run: flutter build apk --release 2>&1 | tee build_output.log
-
-      - name: DEBUG - check for generated google-services values.xml
-        run: |
-          set +e
-          echo "=== Case-insensitive search for GoogleServices generated folder ==="
-          find android/app/build \( -iname "*googleservices*" -o -iname "*google-services*" \) 2>/dev/null
-          echo "=== All values.xml files found ==="
-          find android/app/build -iname "*values*.xml" 2>/dev/null
-          echo "=== Content check: any file containing google_app_id ==="
-          grep -r "google_app_id" android/app/build 2>/dev/null | head -5
-          echo "=== Gradle tasks that ran (case-insensitive google search) ==="
-          grep -i "googleservices\|google-services\|google_app_id\|FirebaseOptions\|processGoogleServices" build_output.log | head -20
-          echo "=== Last 40 lines of build output (context) ==="
-          tail -40 build_output.log
-          exit 0
+        run: flutter build apk --release
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
