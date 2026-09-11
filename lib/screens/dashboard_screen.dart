@@ -8,6 +8,7 @@ import 'disputes_screen.dart';
 import 'users_screen.dart';
 import 'promotions_admin_screen.dart';
 import 'settings_admin_screen.dart';
+import 'notifications_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -61,12 +62,21 @@ class _HomeTabState extends State<_HomeTab> {
   int _pendingTopups = 0;
   int _pendingWithdrawals = 0;
   int _openDisputes = 0;
+  int _unreadCount = 0;
   String? _error;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _loadUnreadCount();
+  }
+
+  Future<void> _loadUnreadCount() async {
+    try {
+      final count = await ApiService.getUnreadCount();
+      if (mounted) setState(() => _unreadCount = count);
+    } catch (_) {}
   }
 
   Future<void> _load() async {
@@ -125,6 +135,32 @@ class _HomeTabState extends State<_HomeTab> {
                 const SizedBox(width: 10),
                 const Expanded(
                   child: Text('MYGame Admin', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                ),
+                Stack(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.notifications_outlined, color: AppColors.hint),
+                      onPressed: () async {
+                        await Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+                        _loadUnreadCount();
+                      },
+                    ),
+                    if (_unreadCount > 0)
+                      Positioned(
+                        right: 6,
+                        top: 6,
+                        child: Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle),
+                          constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                          child: Text(
+                            _unreadCount > 9 ? '9+' : '$_unreadCount',
+                            style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 IconButton(icon: const Icon(Icons.logout, color: AppColors.hint), onPressed: _logout),
               ],
