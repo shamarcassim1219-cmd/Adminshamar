@@ -61,6 +61,11 @@ jobs:
           grep -q "android.permission.INTERNET" "$MANIFEST" || sed -i '/<\/manifest>/i\    <uses-permission android:name="android.permission.INTERNET" \/>' "$MANIFEST"
           grep -q "android.permission.POST_NOTIFICATIONS" "$MANIFEST" || sed -i '/<\/manifest>/i\    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" \/>' "$MANIFEST"
 
+      - name: Add FCM default notification icon
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          grep -q "com.google.firebase.messaging.default_notification_icon" "$MANIFEST" || sed -i '/<\/application>/i\        <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@mipmap/ic_launcher" \/>\n        <meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@android:color/white" \/>' "$MANIFEST"
+
       - name: Generate debug keystore if missing
         run: |
           if [ ! -f ~/.android/debug.keystore ]; then
