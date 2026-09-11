@@ -39,6 +39,8 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
 }
 
+String? firebaseInitError;
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
@@ -66,7 +68,9 @@ Future<void> main() async {
         );
       }
     });
-  } catch (_) {}
+  } catch (e) {
+    firebaseInitError = e.toString();
+  }
   runApp(const AdminApp());
 }
 
@@ -198,6 +202,17 @@ class _AuthGateState extends State<_AuthGate> {
       return const Scaffold(
         backgroundColor: AppColors.bg,
         body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      );
+    }
+    if (firebaseInitError != null) {
+      return Scaffold(
+        backgroundColor: AppColors.bg,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text('Firebase init failed:\n$firebaseInitError', style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+          ),
+        ),
       );
     }
     return _loggedIn ? const DashboardScreen() : const LoginScreen();
