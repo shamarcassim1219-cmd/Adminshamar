@@ -89,16 +89,18 @@ jobs:
 
       - name: DEBUG - check for generated google-services values.xml
         run: |
+          set +e
           echo "=== Case-insensitive search for GoogleServices generated folder ==="
-          find android/app/build -iname "*googleservices*" -o -iname "*google-services*" 2>/dev/null
+          find android/app/build \( -iname "*googleservices*" -o -iname "*google-services*" \) 2>/dev/null
           echo "=== All values.xml files found ==="
           find android/app/build -iname "*values*.xml" 2>/dev/null
           echo "=== Content check: any file containing google_app_id ==="
           grep -r "google_app_id" android/app/build 2>/dev/null | head -5
           echo "=== Gradle tasks that ran (case-insensitive google search) ==="
-          grep -i "googleservices\|google-services\|google_app_id\|FirebaseOptions\|processGoogleServices" build_output.log | head -20 || echo "No mentions found in build output"
+          grep -i "googleservices\|google-services\|google_app_id\|FirebaseOptions\|processGoogleServices" build_output.log | head -20
           echo "=== Last 40 lines of build output (context) ==="
           tail -40 build_output.log
+          exit 0
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
