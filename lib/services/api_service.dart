@@ -318,6 +318,18 @@ class ApiService {
     return data['subAdmins'];
   }
 
+  // ---------- CONTENT REPORTS ----------
+  static Future<List<dynamic>> getContentReports() async {
+    final res = await http.get(Uri.parse('$baseUrl/admin/content-reports'), headers: await _headers());
+    final data = await _handle(res);
+    return data['reports'];
+  }
+
+  static Future<void> resolveContentReport(int id) async {
+    final res = await http.post(Uri.parse('$baseUrl/admin/content-reports/$id/resolve'), headers: await _headers());
+    await _handle(res);
+  }
+
   // ---------- SUPPORT REQUESTS ----------
   static Future<List<dynamic>> getSupportRequests() async {
     final res = await http.get(Uri.parse('$baseUrl/admin/support-requests'), headers: await _headers());

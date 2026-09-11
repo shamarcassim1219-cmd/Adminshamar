@@ -5,6 +5,7 @@ import 'login_screen.dart';
 import 'users_screen.dart';
 import 'promotions_admin_screen.dart';
 import 'sub_admin_management_screen.dart';
+import 'content_reports_screen.dart';
 
 class SettingsAdminScreen extends StatefulWidget {
   const SettingsAdminScreen({super.key});
@@ -102,6 +103,9 @@ class _SettingsAdminScreenState extends State<SettingsAdminScreen> {
           }),
           _tile(Icons.admin_panel_settings_outlined, 'Sub-Admins', 'Requests, devices, email, reports', () {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const SubAdminManagementScreen()));
+          }),
+          _tile(Icons.flag_outlined, 'Reported Content', 'Listings and users reported by customers', () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const ContentReportsScreen()));
           }),
 
           const SizedBox(height: 20),
