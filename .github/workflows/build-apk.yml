@@ -58,6 +58,10 @@ jobs:
           grep -n "applicationId" android/app/build.gradle
           echo "=== google-services.json packages ==="
           python3 -c "import json; d=json.load(open('android/app/google-services.json')); [print(c['client_info']['android_client_info']['package_name']) for c in d['client']]"
+          echo "=== app/build.gradle plugins block ==="
+          grep -n -A 5 "^plugins {" android/app/build.gradle
+          echo "=== settings.gradle plugins block ==="
+          grep -n -A 8 "^plugins {" android/settings.gradle
 
       - name: Bump minSdkVersion to 23
         run: sed -i 's/flutter.minSdkVersion/23/' android/app/build.gradle
