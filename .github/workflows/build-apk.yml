@@ -85,7 +85,15 @@ jobs:
           fi
 
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --release 2>&1 | tee build_output.log
+
+      - name: DEBUG - check for generated google-services values.xml
+        run: |
+          echo "=== Searching for generated google-services values.xml ==="
+          find . -path "*/generated/*google*" -o -path "*/generated/res/google-services*" 2>/dev/null
+          find android/app/build -iname "*values.xml" 2>/dev/null | xargs -I{} sh -c 'echo "--- {} ---"; grep -l "google_app_id\|default_web_client_id\|firebase" {} 2>/dev/null'
+          echo "=== google-services mentions in build output ==="
+          grep -i "google-services\|google_app_id\|FirebaseOptions" build_output.log || echo "No mentions found in build output"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
