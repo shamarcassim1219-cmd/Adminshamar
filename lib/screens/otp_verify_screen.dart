@@ -61,6 +61,8 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
         }
       }
 
+      await Future.delayed(const Duration(seconds: 4));
+
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const DashboardScreen()),
