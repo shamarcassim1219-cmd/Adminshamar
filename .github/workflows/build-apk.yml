@@ -52,6 +52,13 @@ jobs:
           sed -i 's/applicationId = "com.mygame.admin.mygame_admin_app"/applicationId = "com.mygame.admin"/' android/app/build.gradle
           sed -i 's/applicationId "com.mygame.admin.mygame_admin_app"/applicationId "com.mygame.admin"/' android/app/build.gradle
 
+      - name: DEBUG - print applicationId and google-services.json package
+        run: |
+          echo "=== build.gradle applicationId lines ==="
+          grep -n "applicationId" android/app/build.gradle
+          echo "=== google-services.json packages ==="
+          python3 -c "import json; d=json.load(open('android/app/google-services.json')); [print(c['client_info']['android_client_info']['package_name']) for c in d['client']]"
+
       - name: Bump minSdkVersion to 23
         run: sed -i 's/flutter.minSdkVersion/23/' android/app/build.gradle
 
