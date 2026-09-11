@@ -55,10 +55,11 @@ jobs:
       - name: Bump minSdkVersion to 23
         run: sed -i 's/flutter.minSdkVersion/23/' android/app/build.gradle
 
-      - name: Ensure INTERNET permission
+      - name: Ensure permissions
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           grep -q "android.permission.INTERNET" "$MANIFEST" || sed -i '/<\/manifest>/i\    <uses-permission android:name="android.permission.INTERNET" \/>' "$MANIFEST"
+          grep -q "android.permission.POST_NOTIFICATIONS" "$MANIFEST" || sed -i '/<\/manifest>/i\    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" \/>' "$MANIFEST"
 
       - name: Generate debug keystore if missing
         run: |

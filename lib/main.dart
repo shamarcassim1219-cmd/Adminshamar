@@ -141,6 +141,11 @@ class _AuthGateState extends State<_AuthGate> {
 
   Future<void> _registerFcmToken() async {
     try {
+      await FirebaseMessaging.instance.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
       final fcmToken = await FirebaseMessaging.instance.getToken();
       if (fcmToken != null) await ApiService.saveFcmToken(fcmToken);
     } catch (_) {}
