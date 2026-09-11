@@ -61,6 +61,17 @@ class ApiService {
     return data['user'];
   }
 
+  static Future<void> saveFcmToken(String fcmToken) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/notifications/fcm-token'),
+        headers: await _headers(),
+        body: jsonEncode({'token': fcmToken}),
+      );
+      await _handle(res);
+    } catch (_) {}
+  }
+
   // ---------- UPLOAD ----------
   static Future<String> uploadImage(File file) async {
     final token = await getToken();

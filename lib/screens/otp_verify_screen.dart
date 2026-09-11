@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../main.dart';
 import '../services/api_service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'dashboard_screen.dart';
 
 class OtpVerifyScreen extends StatefulWidget {
@@ -30,6 +31,12 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
 
     try {
       await ApiService.verifyLogin(widget.email, code);
+
+      try {
+        final fcmToken = await FirebaseMessaging.instance.getToken();
+        if (fcmToken != null) await ApiService.saveFcmToken(fcmToken);
+      } catch (_) {}
+
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const DashboardScreen()),
