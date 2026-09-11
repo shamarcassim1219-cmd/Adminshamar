@@ -237,6 +237,87 @@ class ApiService {
     await _handle(res);
   }
 
+  static Future<Map<String, dynamic>> getUserDetail(int id) async {
+    final res = await http.get(Uri.parse('$baseUrl/admin/users/$id'), headers: await _headers());
+    return await _handle(res);
+  }
+
+  static Future<void> updateUser(int id, {String? displayName, String? phone, String? email}) async {
+    final body = <String, dynamic>{};
+    if (displayName != null) body['displayName'] = displayName;
+    if (phone != null) body['phone'] = phone;
+    if (email != null) body['email'] = email;
+    final res = await http.put(
+      Uri.parse('$baseUrl/admin/users/$id'),
+      headers: await _headers(),
+      body: jsonEncode(body),
+    );
+    await _handle(res);
+  }
+
+  // ---------- SUB-ADMIN MANAGEMENT ----------
+  static Future<List<dynamic>> getSubAdminRequests() async {
+    final res = await http.get(Uri.parse('$baseUrl/admin/sub-admins/requests'), headers: await _headers());
+    final data = await _handle(res);
+    return data['requests'];
+  }
+
+  static Future<void> decideSubAdminRequest(int userId, bool approve) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/admin/sub-admins/$userId/decide'),
+      headers: await _headers(),
+      body: jsonEncode({'approve': approve}),
+    );
+    await _handle(res);
+  }
+
+  static Future<List<dynamic>> getDeviceRequests() async {
+    final res = await http.get(Uri.parse('$baseUrl/admin/sub-admins/device-requests'), headers: await _headers());
+    final data = await _handle(res);
+    return data['requests'];
+  }
+
+  static Future<void> decideDeviceRequest(int id, bool approve) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/admin/sub-admins/device-requests/$id/decide'),
+      headers: await _headers(),
+      body: jsonEncode({'approve': approve}),
+    );
+    await _handle(res);
+  }
+
+  static Future<List<dynamic>> getEmailChangeRequests() async {
+    final res = await http.get(Uri.parse('$baseUrl/admin/sub-admins/email-requests'), headers: await _headers());
+    final data = await _handle(res);
+    return data['requests'];
+  }
+
+  static Future<void> decideEmailChangeRequest(int id, bool approve) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/admin/sub-admins/email-requests/$id/decide'),
+      headers: await _headers(),
+      body: jsonEncode({'approve': approve}),
+    );
+    await _handle(res);
+  }
+
+  static Future<List<dynamic>> getVerificationReports() async {
+    final res = await http.get(Uri.parse('$baseUrl/admin/sub-admins/reports'), headers: await _headers());
+    final data = await _handle(res);
+    return data['reports'];
+  }
+
+  static Future<void> resolveReport(int id) async {
+    final res = await http.post(Uri.parse('$baseUrl/admin/sub-admins/reports/$id/resolve'), headers: await _headers());
+    await _handle(res);
+  }
+
+  static Future<List<dynamic>> getSubAdminsList() async {
+    final res = await http.get(Uri.parse('$baseUrl/admin/sub-admins/list'), headers: await _headers());
+    final data = await _handle(res);
+    return data['subAdmins'];
+  }
+
   // ---------- SUPPORT REQUESTS ----------
   static Future<List<dynamic>> getSupportRequests() async {
     final res = await http.get(Uri.parse('$baseUrl/admin/support-requests'), headers: await _headers());
