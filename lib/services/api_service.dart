@@ -43,7 +43,7 @@ class ApiService {
   // ---------- AUTH ----------
   static Future<void> login(String email, String password) async {
     final res = await http.post(
-      Uri.parse('$baseUrl/auth/login'),
+      Uri.parse('$baseUrl/auth/admin-login'),
       headers: await _headers(withAuth: false),
       body: jsonEncode({'email': email, 'password': password}),
     );
@@ -52,7 +52,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>> verifyLogin(String email, String code) async {
     final res = await http.post(
-      Uri.parse('$baseUrl/auth/verify-login'),
+      Uri.parse('$baseUrl/auth/admin-verify-login'),
       headers: await _headers(withAuth: false),
       body: jsonEncode({'email': email, 'code': code}),
     );
