@@ -433,6 +433,20 @@ class ApiService {
     await _handle(res);
   }
 
+  static Future<Map<String, dynamic>> getAdminBankDetails() async {
+    final res = await http.get(Uri.parse('$baseUrl/wallet/admin-bank-details'), headers: await _headers());
+    return await _handle(res);
+  }
+
+  static Future<void> updateAdminBankDetails(String bankName, String accountName, String accountNumber, String branch) async {
+    final res = await http.put(
+      Uri.parse('$baseUrl/wallet/admin-bank-details'),
+      headers: await _headers(),
+      body: jsonEncode({'bankName': bankName, 'accountName': accountName, 'accountNumber': accountNumber, 'branch': branch}),
+    );
+    await _handle(res);
+  }
+
   static Future<void> broadcast(String title, String body) async {
     final res = await http.post(
       Uri.parse('$baseUrl/admin/broadcast'),

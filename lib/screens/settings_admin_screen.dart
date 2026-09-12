@@ -18,16 +18,63 @@ class _SettingsAdminScreenState extends State<SettingsAdminScreen> {
   final _commissionCtrl = TextEditingController();
   final _broadcastTitleCtrl = TextEditingController();
   final _broadcastBodyCtrl = TextEditingController();
+  final _bankNameCtrl = TextEditingController();
+  final _accountNameCtrl = TextEditingController();
+  final _accountNumberCtrl = TextEditingController();
+  final _branchCtrl = TextEditingController();
   bool _loading = true;
   bool _savingCommission = false;
   bool _sendingBroadcast = false;
+  bool _savingBankDetails = false;
   String? _commissionMsg;
   String? _broadcastMsg;
+  String? _bankDetailsMsg;
 
   @override
   void initState() {
     super.initState();
     _loadCommission();
+    _loadBankDetails();
+  }
+
+  Future<void> _loadBankDetails() async {
+    try {
+      final details = await ApiService.getAdminBankDetails();
+      if (!mounted) return;
+      setState(() {
+        _bankNameCtrl.text = details['bankName'] ?? '';
+        _accountNameCtrl.text = details['accountName'] ?? '';
+        _accountNumberCtrl.text = details['accountNumber'] ?? '';
+        _branchCtrl.text = details['branch'] ?? '';
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _saveBankDetails() async {
+    if (_bankNameCtrl.text.trim().isEmpty ||
+        _accountNameCtrl.text.trim().isEmpty ||
+        _accountNumberCtrl.text.trim().isEmpty ||
+        _branchCtrl.text.trim().isEmpty) {
+      setState(() => _bankDetailsMsg = 'All fields are required');
+      return;
+    }
+    setState(() {
+      _savingBankDetails = true;
+      _bankDetailsMsg = null;
+    });
+    try {
+      await ApiService.updateAdminBankDetails(
+        _bankNameCtrl.text.trim(),
+        _accountNameCtrl.text.trim(),
+        _accountNumberCtrl.text.trim(),
+        _branchCtrl.text.trim(),
+      );
+      setState(() => _bankDetailsMsg = 'Bank details updated successfully');
+    } catch (e) {
+      setState(() => _bankDetailsMsg = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _savingBankDetails = false);
+    }
   }
 
   Future<void> _loadCommission() async {
@@ -135,6 +182,50 @@ class _SettingsAdminScreenState extends State<SettingsAdminScreen> {
               const SizedBox(height: 6),
               Text(_commissionMsg!, style: const TextStyle(color: AppColors.hint, fontSize: 12)),
             ],
+          ],
+
+          const SizedBox(height: 24),
+          const Text('Top-Up Bank Details', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13)),
+          const SizedBox(height: 4),
+          const Text('Shown to users when they top up their wallet', style: TextStyle(color: AppColors.hint, fontSize: 11)),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _bankNameCtrl,
+            style: const TextStyle(color: Colors.white),
+            decoration: const InputDecoration(labelText: 'Bank Name'),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _accountNameCtrl,
+            style: const TextStyle(color: Colors.white),
+            decoration: const InputDecoration(labelText: 'Account Name'),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _accountNumberCtrl,
+            style: const TextStyle(color: Colors.white),
+            decoration: const InputDecoration(labelText: 'Account Number'),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _branchCtrl,
+            style: const TextStyle(color: Colors.white),
+            decoration: const InputDecoration(labelText: 'Branch'),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 46,
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: _savingBankDetails ? null : _saveBankDetails,
+              child: _savingBankDetails
+                  ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text('Update Bank Details'),
+            ),
+          ),
+          if (_bankDetailsMsg != null) ...[
+            const SizedBox(height: 6),
+            Text(_bankDetailsMsg!, style: const TextStyle(color: AppColors.hint, fontSize: 12)),
           ],
 
           const SizedBox(height: 24),
