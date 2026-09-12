@@ -51,6 +51,121 @@ class _ContentReportsScreenState extends State<ContentReportsScreen> {
     }
   }
 
+  Future<void> _showBanDialog(int userId, String userLabel) async {
+    final reasonCtrl = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Text('Ban $userLabel', style: const TextStyle(color: Colors.white, fontSize: 16)),
+        content: TextField(
+          controller: reasonCtrl,
+          maxLines: 3,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(hintText: 'Reason for ban (sent to the user)'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Ban User'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final reason = reasonCtrl.text.trim().isEmpty ? 'Violation of terms' : reasonCtrl.text.trim();
+      try {
+        await ApiService.banUser(userId, reason);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User banned')));
+        _load();
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))));
+      }
+    }
+  }
+
+  Future<void> _unban(int userId) async {
+    try {
+      await ApiService.unbanUser(userId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User unbanned')));
+      _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))));
+    }
+  }
+
+  Widget _personCard(String role, Map<String, dynamic>? person, {String? extraLabel}) {
+    if (person == null) {
+      return Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(color: AppColors.fieldFill, borderRadius: BorderRadius.circular(8)),
+        child: Text('$role: not found', style: const TextStyle(color: AppColors.hint, fontSize: 12)),
+      );
+    }
+
+    final int userId = person['id'] is int ? person['id'] : int.tryParse(person['id'].toString()) ?? 0;
+    final bool isBanned = person['is_banned'] == true || person['is_banned'] == 1;
+    final name = person['display_name'] ?? person['email'] ?? 'User #$userId';
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      margin: const EdgeInsets.only(top: 8),
+      decoration: BoxDecoration(
+        color: AppColors.fieldFill,
+        borderRadius: BorderRadius.circular(8),
+        border: isBanned ? Border.all(color: Colors.redAccent.withOpacity(0.5)) : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(role, style: const TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.bold)),
+              if (extraLabel != null) ...[
+                const SizedBox(width: 6),
+                Text('($extraLabel)', style: const TextStyle(color: AppColors.hint, fontSize: 11)),
+              ],
+              if (isBanned) ...[
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
+                  child: const Text('BANNED', style: TextStyle(color: Colors.redAccent, fontSize: 9, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+          if (person['email'] != null) Text(person['email'], style: const TextStyle(color: AppColors.hint, fontSize: 11)),
+          if (person['phone'] != null && person['phone'].toString().isNotEmpty) Text('Phone: ${person['phone']}', style: const TextStyle(color: AppColors.hint, fontSize: 11)),
+          Text('Wallet: Rs. ${person['wallet_balance'] ?? 0}', style: const TextStyle(color: AppColors.hint, fontSize: 11)),
+          Text('Verified: ${person['verified_status'] ?? 'unverified'}', style: const TextStyle(color: AppColors.hint, fontSize: 11)),
+          if (isBanned && person['ban_reason'] != null)
+            Text('Ban reason: ${person['ban_reason']}', style: const TextStyle(color: Colors.redAccent, fontSize: 11)),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: isBanned
+                ? OutlinedButton(onPressed: () => _unban(userId), child: const Text('Unban'))
+                : OutlinedButton(
+                    style: OutlinedButton.styleFrom(foregroundColor: Colors.redAccent, side: const BorderSide(color: Colors.redAccent)),
+                    onPressed: () => _showBanDialog(userId, name),
+                    child: const Text('Ban This User'),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -71,6 +186,10 @@ class _ContentReportsScreenState extends State<ContentReportsScreen> {
                         itemBuilder: (context, i) {
                           final r = _items[i];
                           final isListing = r['target_type'] == 'listing';
+                          final reporter = r['reporter_details'] as Map<String, dynamic>?;
+                          final targetUser = r['target_user_details'] as Map<String, dynamic>?;
+                          final targetListing = r['target_listing'] as Map<String, dynamic>?;
+
                           return Container(
                             margin: const EdgeInsets.only(bottom: 10),
                             padding: const EdgeInsets.all(12),
@@ -82,7 +201,7 @@ class _ContentReportsScreenState extends State<ContentReportsScreen> {
                                   children: [
                                     Icon(isListing ? Icons.storefront_outlined : Icons.person_outline, size: 16, color: AppColors.primary),
                                     const SizedBox(width: 6),
-                                    Text(isListing ? 'Listing' : 'User', style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold)),
+                                    Text(isListing ? 'Listing Report' : 'User Report', style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold)),
                                   ],
                                 ),
                                 const SizedBox(height: 6),
@@ -97,9 +216,14 @@ class _ContentReportsScreenState extends State<ContentReportsScreen> {
                                     child: Text(r['details'], style: const TextStyle(color: AppColors.hint, fontSize: 12)),
                                   ),
                                 ],
-                                const SizedBox(height: 6),
-                                Text('Reported by: ${r['reporter_name'] ?? ''}', style: const TextStyle(color: AppColors.hint, fontSize: 11)),
-                                const SizedBox(height: 10),
+                                const Divider(height: 20),
+                                _personCard('REPORTED BY', reporter),
+                                _personCard(
+                                  isListing ? 'LISTING SELLER' : 'REPORTED USER',
+                                  targetUser,
+                                  extraLabel: isListing ? targetListing?['status']?.toString() : null,
+                                ),
+                                const SizedBox(height: 12),
                                 SizedBox(
                                   width: double.infinity,
                                   child: OutlinedButton(onPressed: () => _resolve(r['id']), child: const Text('Mark Resolved')),
