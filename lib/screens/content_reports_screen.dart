@@ -189,6 +189,7 @@ class _ContentReportsScreenState extends State<ContentReportsScreen> {
                           final reporter = r['reporter_details'] as Map<String, dynamic>?;
                           final targetUser = r['target_user_details'] as Map<String, dynamic>?;
                           final targetListing = r['target_listing'] as Map<String, dynamic>?;
+                          final listingStatusLabel = targetListing != null ? targetListing['status']?.toString() : null;
 
                           return Container(
                             margin: const EdgeInsets.only(bottom: 10),
@@ -221,7 +222,7 @@ class _ContentReportsScreenState extends State<ContentReportsScreen> {
                                 _personCard(
                                   isListing ? 'LISTING SELLER' : 'REPORTED USER',
                                   targetUser,
-                                  extraLabel: isListing ? targetListing?['status']?.toString() : null,
+                                  extraLabel: isListing ? listingStatusLabel : null,
                                 ),
                                 const SizedBox(height: 12),
                                 SizedBox(
