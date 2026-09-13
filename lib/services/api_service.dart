@@ -463,4 +463,50 @@ class ApiService {
     );
     await _handle(res);
   }
+
+  // ---------- SETTINGS EXTRAS ----------
+  static Future<void> changePassword(String currentPassword, String newPassword) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/auth/admin-change-password'),
+      headers: await _headers(),
+      body: jsonEncode({'currentPassword': currentPassword, 'newPassword': newPassword}),
+    );
+    await _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> checkForUpdate(String currentVersion) async {
+    try {
+      final res = await http.get(
+        Uri.parse('https://buysellgame.store/downloads/admin-version.json?t=${DateTime.now().millisecondsSinceEpoch}'),
+      );
+      if (res.statusCode != 200) {
+        throw Exception('Could not check for updates right now');
+      }
+      final data = jsonDecode(res.body);
+      final latestVersion = (data['version'] ?? '').toString();
+      final downloadUrl = data['downloadUrl'];
+      final isNewer = _isVersionNewer(latestVersion, currentVersion);
+      return {
+        'updateAvailable': isNewer,
+        'latestVersion': latestVersion,
+        'downloadUrl': downloadUrl,
+        'releaseNotes': data['releaseNotes'],
+      };
+    } catch (e) {
+      throw Exception('Could not check for updates: ${e.toString().replaceFirst('Exception: ', '')}');
+    }
+  }
+
+  static bool _isVersionNewer(String latest, String current) {
+    if (latest.isEmpty) return false;
+    final l = latest.split('.').map((p) => int.tryParse(p) ?? 0).toList();
+    final c = current.split('.').map((p) => int.tryParse(p) ?? 0).toList();
+    for (int i = 0; i < 3; i++) {
+      final lv = i < l.length ? l[i] : 0;
+      final cv = i < c.length ? c[i] : 0;
+      if (lv > cv) return true;
+      if (lv < cv) return false;
+    }
+    return false;
+  }
 }

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
 import '../main.dart';
 import '../services/api_service.dart';
 import 'login_screen.dart';
@@ -6,6 +9,8 @@ import 'users_screen.dart';
 import 'promotions_admin_screen.dart';
 import 'sub_admin_management_screen.dart';
 import 'content_reports_screen.dart';
+
+const String kAppVersion = '1.0.1';
 
 class SettingsAdminScreen extends StatefulWidget {
   const SettingsAdminScreen({super.key});
@@ -134,6 +139,219 @@ class _SettingsAdminScreenState extends State<SettingsAdminScreen> {
     );
   }
 
+  void _showChangePasswordDialog() {
+    final currentCtrl = TextEditingController();
+    final newCtrl = TextEditingController();
+    final confirmCtrl = TextEditingController();
+    bool saving = false;
+    String? errorMsg;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          Future<void> submit() async {
+            if (newCtrl.text.trim().length < 6) {
+              setDialogState(() => errorMsg = 'New password must be at least 6 characters');
+              return;
+            }
+            if (newCtrl.text.trim() != confirmCtrl.text.trim()) {
+              setDialogState(() => errorMsg = 'Passwords do not match');
+              return;
+            }
+            setDialogState(() {
+              saving = true;
+              errorMsg = null;
+            });
+            try {
+              await ApiService.changePassword(currentCtrl.text.trim(), newCtrl.text.trim());
+              if (!ctx.mounted) return;
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Password changed successfully')),
+              );
+            } catch (e) {
+              setDialogState(() {
+                saving = false;
+                errorMsg = e.toString().replaceFirst('Exception: ', '');
+              });
+            }
+          }
+
+          return AlertDialog(
+            backgroundColor: AppColors.surface,
+            title: const Text('Change Password', style: TextStyle(color: Colors.white)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: currentCtrl,
+                  obscureText: true,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'Current Password'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: newCtrl,
+                  obscureText: true,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'New Password'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: confirmCtrl,
+                  obscureText: true,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'Confirm New Password'),
+                ),
+                if (errorMsg != null) ...[
+                  const SizedBox(height: 8),
+                  Text(errorMsg!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+              ElevatedButton(
+                onPressed: saving ? null : submit,
+                child: saving
+                    ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('Save'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _checkForUpdate() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const AlertDialog(
+        backgroundColor: AppColors.surface,
+        content: Row(
+          children: [
+            CircularProgressIndicator(color: AppColors.primary),
+            SizedBox(width: 20),
+            Text('Checking for updates...', style: TextStyle(color: Colors.white)),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final result = await ApiService.checkForUpdate(kAppVersion);
+      if (!mounted) return;
+      Navigator.pop(context);
+
+      if (result['updateAvailable'] == true) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: AppColors.surface,
+            title: const Text('Update Available', style: TextStyle(color: Colors.white)),
+            content: Text(
+              'Version ${result['latestVersion']} is available.\n\n${result['releaseNotes'] ?? ''}',
+              style: const TextStyle(color: AppColors.hint, fontSize: 13),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Later')),
+              if (result['downloadUrl'] != null)
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _downloadAndInstallUpdate(result['downloadUrl']);
+                  },
+                  child: const Text('Download'),
+                ),
+            ],
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("You're on the latest version")),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
+    }
+  }
+
+  Future<void> _downloadAndInstallUpdate(String url) async {
+    double progress = 0;
+    void Function(void Function())? refreshDialog;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) => PopScope(
+        canPop: false,
+        child: StatefulBuilder(
+          builder: (dialogCtx, setDialogState) {
+            refreshDialog = setDialogState;
+            return AlertDialog(
+              backgroundColor: AppColors.surface,
+              title: const Text('Downloading Update', style: TextStyle(color: Colors.white)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  LinearProgressIndicator(
+                    value: progress > 0 ? progress : null,
+                    color: AppColors.primary,
+                    backgroundColor: AppColors.border,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    progress > 0 ? '${(progress * 100).toStringAsFixed(0)}%' : 'Starting download...',
+                    style: const TextStyle(color: AppColors.hint, fontSize: 13),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Please keep the app open until the download completes.',
+                    style: TextStyle(color: AppColors.hint, fontSize: 11),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+
+    try {
+      final dir = await getTemporaryDirectory();
+      final filePath = '${dir.path}/admin-app-release.apk';
+
+      await Dio().download(
+        url,
+        filePath,
+        onReceiveProgress: (received, total) {
+          if (total > 0) {
+            progress = received / total;
+            refreshDialog?.call(() {});
+          }
+        },
+      );
+
+      if (mounted) Navigator.pop(context);
+      await OpenFilex.open(filePath);
+    } catch (e) {
+      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Download failed: ${e.toString().replaceFirst('Exception: ', '')}')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -249,6 +467,12 @@ class _SettingsAdminScreenState extends State<SettingsAdminScreen> {
             const SizedBox(height: 6),
             Text(_broadcastMsg!, style: const TextStyle(color: AppColors.hint, fontSize: 12)),
           ],
+
+          const SizedBox(height: 24),
+          const Text('Account', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13)),
+          const SizedBox(height: 10),
+          _tile(Icons.lock_reset, 'Change Password', 'Update your admin login password', _showChangePasswordDialog),
+          _tile(Icons.info_outline, 'App Version', '$kAppVersion — Tap to check for updates', _checkForUpdate),
 
           const SizedBox(height: 30),
           SizedBox(

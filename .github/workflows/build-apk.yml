@@ -35,10 +35,18 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Generate app icon
+        run: dart run flutter_launcher_icons
+
       - name: Fix applicationId
         run: |
           sed -i 's/applicationId = "com.mygame.admin.mygame_admin_app"/applicationId = "com.mygame.admin"/' android/app/build.gradle
           sed -i 's/applicationId "com.mygame.admin.mygame_admin_app"/applicationId "com.mygame.admin"/' android/app/build.gradle
+
+      - name: Set app display name to Admin
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          sed -i 's/android:label="[^"]*"/android:label="Admin"/' "$MANIFEST"
 
       - name: Bump minSdkVersion to 23
         run: sed -i 's/flutter.minSdkVersion/23/' android/app/build.gradle
@@ -69,3 +77,25 @@ jobs:
         with:
           name: mygame-admin-release
           path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Prepare downloads folder for FTP
+        run: |
+          mkdir -p ftp_downloads
+          cp build/app/outputs/flutter-apk/app-release.apk ftp_downloads/admin-app-release.apk
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | cut -d'+' -f1)
+          cat > ftp_downloads/admin-version.json << EOF
+          {
+            "version": "$VERSION",
+            "downloadUrl": "https://buysellgame.store/downloads/admin-app-release.apk",
+            "releaseNotes": "Bug fixes and improvements"
+          }
+          EOF
+
+      - name: Deploy APK + version.json to website
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          local-dir: ./ftp_downloads/
+          server-dir: ./downloads/
