@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../main.dart';
 import '../services/api_service.dart';
@@ -618,27 +619,48 @@ class SupportRequestDetailScreen extends StatefulWidget {
 class _SupportRequestDetailScreenState extends State<SupportRequestDetailScreen> {
   List<dynamic> _messages = [];
   bool _loading = true;
+  bool _userTyping = false;
   String? _originalMessage;
   final _replyCtrl = TextEditingController();
   bool _sending = false;
+  Timer? _pollTimer;
+  Timer? _typingDebounce;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) => _load(silent: true));
+    _replyCtrl.addListener(_onTextChanged);
   }
 
-  Future<void> _load() async {
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    _typingDebounce?.cancel();
+    _replyCtrl.removeListener(_onTextChanged);
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    if (_replyCtrl.text.trim().isEmpty) return;
+    if (_typingDebounce?.isActive ?? false) return;
+    _typingDebounce = Timer(const Duration(seconds: 3), () {});
+    ApiService.sendSupportTyping(widget.request['id']);
+  }
+
+  Future<void> _load({bool silent = false}) async {
     try {
       final data = await ApiService.getSupportMessages(widget.request['id']);
       if (!mounted) return;
       setState(() {
-        _messages = data;
+        _messages = data['messages'] ?? [];
+        _userTyping = data['userTyping'] == true;
         _loading = false;
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _loading = false);
+      if (!silent) setState(() => _loading = false);
     }
   }
 
@@ -724,6 +746,14 @@ class _SupportRequestDetailScreenState extends State<SupportRequestDetailScreen>
                           },
                         ),
                 ),
+                if (_userTyping)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text('User is typing...', style: TextStyle(color: AppColors.hint, fontSize: 12, fontStyle: FontStyle.italic)),
+                    ),
+                  ),
                 SafeArea(
                   child: Padding(
                     padding: const EdgeInsets.all(12),

@@ -371,10 +371,9 @@ class ApiService {
     return data['requests'];
   }
 
-  static Future<List<dynamic>> getSupportMessages(int requestId) async {
+  static Future<Map<String, dynamic>> getSupportMessages(int requestId) async {
     final res = await http.get(Uri.parse('$baseUrl/admin/support-requests/$requestId/messages'), headers: await _headers());
-    final data = await _handle(res);
-    return data['messages'];
+    return await _handle(res);
   }
 
   static Future<void> sendSupportReply(int requestId, String content) async {
@@ -384,6 +383,15 @@ class ApiService {
       body: jsonEncode({'content': content}),
     );
     await _handle(res);
+  }
+
+  static Future<void> sendSupportTyping(int requestId) async {
+    try {
+      await http.post(
+        Uri.parse('$baseUrl/admin/support-requests/$requestId/typing'),
+        headers: await _headers(),
+      );
+    } catch (_) {}
   }
 
   static Future<void> closeSupportRequest(int requestId) async {
