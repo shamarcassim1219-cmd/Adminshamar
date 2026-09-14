@@ -10,7 +10,7 @@ import 'promotions_admin_screen.dart';
 import 'sub_admin_management_screen.dart';
 import 'content_reports_screen.dart';
 
-const String kAppVersion = '1.0.1';
+const String kFallbackAppVersion = '1.0.8';
 
 class SettingsAdminScreen extends StatefulWidget {
   const SettingsAdminScreen({super.key});
@@ -242,7 +242,7 @@ class _SettingsAdminScreenState extends State<SettingsAdminScreen> {
     );
 
     try {
-      final result = await ApiService.checkForUpdate(kAppVersion);
+      final result = await ApiService.checkForUpdate(_currentVersion);
       if (!mounted) return;
       Navigator.pop(context);
 
@@ -472,7 +472,7 @@ class _SettingsAdminScreenState extends State<SettingsAdminScreen> {
           const Text('Account', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13)),
           const SizedBox(height: 10),
           _tile(Icons.lock_reset, 'Change Password', 'Update your admin login password', _showChangePasswordDialog),
-          _tile(Icons.info_outline, 'App Version', '$kAppVersion — Tap to check for updates', _checkForUpdate),
+          _tile(Icons.info_outline, 'App Version', '$_currentVersion — Tap to check for updates', _checkForUpdate),
 
           const SizedBox(height: 30),
           SizedBox(
