@@ -146,6 +146,12 @@ class ApiService {
     return data['orders'];
   }
 
+  static Future<List<dynamic>> searchEscrowOrders(String q) async {
+    final res = await http.get(Uri.parse('$baseUrl/admin-chat/escrow-orders/search?q=${Uri.encodeQueryComponent(q)}'), headers: await _headers());
+    final data = await _handle(res);
+    return data['orders'];
+  }
+
   static Future<void> releaseEscrow(int orderId) async {
     final res = await http.post(Uri.parse('$baseUrl/admin-chat/orders/$orderId/release-escrow'), headers: await _headers());
     await _handle(res);
@@ -175,6 +181,12 @@ class ApiService {
   // ---------- VERIFICATIONS ----------
   static Future<List<dynamic>> getVerifications() async {
     final res = await http.get(Uri.parse('$baseUrl/admin/verifications'), headers: await _headers());
+    final data = await _handle(res);
+    return data['verifications'];
+  }
+
+  static Future<List<dynamic>> searchVerifications(String q) async {
+    final res = await http.get(Uri.parse('$baseUrl/admin/verifications/search?q=${Uri.encodeQueryComponent(q)}'), headers: await _headers());
     final data = await _handle(res);
     return data['verifications'];
   }
@@ -393,6 +405,12 @@ class ApiService {
   // ---------- SUPPORT REQUESTS ----------
   static Future<List<dynamic>> getSupportRequests() async {
     final res = await http.get(Uri.parse('$baseUrl/admin/support-requests'), headers: await _headers());
+    final data = await _handle(res);
+    return data['requests'];
+  }
+
+  static Future<List<dynamic>> searchSupportRequests(String q) async {
+    final res = await http.get(Uri.parse('$baseUrl/admin/support-requests/search?q=${Uri.encodeQueryComponent(q)}'), headers: await _headers());
     final data = await _handle(res);
     return data['requests'];
   }

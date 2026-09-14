@@ -29,6 +29,324 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
     super.dispose();
   }
 
+  void _showVerificationSearch() {
+    final qCtrl = TextEditingController();
+    List<dynamic>? results;
+    bool searching = false;
+    String? error;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          Future<void> search() async {
+            final q = qCtrl.text.trim();
+            if (q.isEmpty) return;
+            setSheetState(() { searching = true; error = null; results = null; });
+            try {
+              final data = await ApiService.searchVerifications(q);
+              setSheetState(() { results = data; searching = false; });
+            } catch (e) {
+              setSheetState(() { error = e.toString().replaceFirst('Exception: ', ''); searching = false; });
+            }
+          }
+
+          return Padding(
+            padding: EdgeInsets.only(left: 20, right: 20, top: 20, bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Search Verifications', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
+                const Text('Search by name, phone number, or email', style: TextStyle(color: AppColors.hint, fontSize: 12)),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: qCtrl,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(hintText: 'Name, phone, or email'),
+                        onSubmitted: (_) => search(),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: searching ? null : search,
+                      child: searching
+                          ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                          : const Text('Search'),
+                    ),
+                  ],
+                ),
+                if (error != null) ...[
+                  const SizedBox(height: 10),
+                  Text(error!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+                ],
+                if (results != null) ...[
+                  const SizedBox(height: 16),
+                  if (results!.isEmpty)
+                    const Text('No verifications found.', style: TextStyle(color: AppColors.hint, fontSize: 13))
+                  else
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: results!.length,
+                        itemBuilder: (context, i) {
+                          final v = results![i];
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(padding: const EdgeInsets.all(12), alignment: Alignment.centerLeft),
+                              onPressed: () {
+                                Navigator.pop(ctx);
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => VerificationDetailScreen(verification: v)));
+                              },
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(v['display_name'] ?? v['email'] ?? '—', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                        Text('${v['status']}', style: const TextStyle(color: AppColors.hint, fontSize: 12)),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(Icons.chevron_right, color: AppColors.hint),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showEscrowSearch() {
+    final qCtrl = TextEditingController();
+    List<dynamic>? results;
+    bool searching = false;
+    String? error;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          Future<void> search() async {
+            final q = qCtrl.text.trim();
+            if (q.isEmpty) return;
+            setSheetState(() { searching = true; error = null; results = null; });
+            try {
+              final data = await ApiService.searchEscrowOrders(q);
+              setSheetState(() { results = data; searching = false; });
+            } catch (e) {
+              setSheetState(() { error = e.toString().replaceFirst('Exception: ', ''); searching = false; });
+            }
+          }
+
+          return Padding(
+            padding: EdgeInsets.only(left: 20, right: 20, top: 20, bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Search Escrow Orders', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
+                const Text('Search by buyer or seller name, phone, or email', style: TextStyle(color: AppColors.hint, fontSize: 12)),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: qCtrl,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(hintText: 'Name, phone, or email'),
+                        onSubmitted: (_) => search(),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: searching ? null : search,
+                      child: searching
+                          ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                          : const Text('Search'),
+                    ),
+                  ],
+                ),
+                if (error != null) ...[
+                  const SizedBox(height: 10),
+                  Text(error!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+                ],
+                if (results != null) ...[
+                  const SizedBox(height: 16),
+                  if (results!.isEmpty)
+                    const Text('No orders found.', style: TextStyle(color: AppColors.hint, fontSize: 13))
+                  else
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: results!.length,
+                        itemBuilder: (context, i) {
+                          final o = results![i];
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(padding: const EdgeInsets.all(12), alignment: Alignment.centerLeft),
+                              onPressed: () {
+                                Navigator.pop(ctx);
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => EscrowDetailScreen(order: o)));
+                              },
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(o['title'] ?? '—', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                        Text('${o['status']} — LKR ${o['price']}', style: const TextStyle(color: AppColors.hint, fontSize: 12)),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(Icons.chevron_right, color: AppColors.hint),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showSupportSearch() {
+    final qCtrl = TextEditingController();
+    List<dynamic>? results;
+    bool searching = false;
+    String? error;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          Future<void> search() async {
+            final q = qCtrl.text.trim();
+            if (q.isEmpty) return;
+            setSheetState(() { searching = true; error = null; results = null; });
+            try {
+              final data = await ApiService.searchSupportRequests(q);
+              setSheetState(() { results = data; searching = false; });
+            } catch (e) {
+              setSheetState(() { error = e.toString().replaceFirst('Exception: ', ''); searching = false; });
+            }
+          }
+
+          return Padding(
+            padding: EdgeInsets.only(left: 20, right: 20, top: 20, bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Search Support Requests', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
+                const Text('Search by name, phone number, or email', style: TextStyle(color: AppColors.hint, fontSize: 12)),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: qCtrl,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(hintText: 'Name, phone, or email'),
+                        onSubmitted: (_) => search(),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: searching ? null : search,
+                      child: searching
+                          ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                          : const Text('Search'),
+                    ),
+                  ],
+                ),
+                if (error != null) ...[
+                  const SizedBox(height: 10),
+                  Text(error!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+                ],
+                if (results != null) ...[
+                  const SizedBox(height: 16),
+                  if (results!.isEmpty)
+                    const Text('No support requests found.', style: TextStyle(color: AppColors.hint, fontSize: 13))
+                  else
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: results!.length,
+                        itemBuilder: (context, i) {
+                          final s = results![i];
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(padding: const EdgeInsets.all(12), alignment: Alignment.centerLeft),
+                              onPressed: () {
+                                Navigator.pop(ctx);
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => SupportRequestDetailScreen(request: s)));
+                              },
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(s['userEmail'] ?? '—', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                        Text('${s['status']} — ${s['subject'] ?? ''}', style: const TextStyle(color: AppColors.hint, fontSize: 12)),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(Icons.chevron_right, color: AppColors.hint),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   void _showWithdrawalSearch() {
     final qCtrl = TextEditingController();
     List<dynamic>? results;
@@ -292,10 +610,16 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
       appBar: AppBar(
         title: const Text('Requests'),
         actions: [
+          if (_tabController.index == 0)
+            IconButton(icon: const Icon(Icons.search), onPressed: _showVerificationSearch, tooltip: 'Search by name/phone/email'),
           if (_tabController.index == 1)
             IconButton(icon: const Icon(Icons.search), onPressed: _showReferenceSearch, tooltip: 'Search by reference number'),
           if (_tabController.index == 2)
             IconButton(icon: const Icon(Icons.search), onPressed: _showWithdrawalSearch, tooltip: 'Search by name/phone/email'),
+          if (_tabController.index == 3)
+            IconButton(icon: const Icon(Icons.search), onPressed: _showEscrowSearch, tooltip: 'Search by name/phone/email'),
+          if (_tabController.index == 4)
+            IconButton(icon: const Icon(Icons.search), onPressed: _showSupportSearch, tooltip: 'Search by name/phone/email'),
         ],
         bottom: TabBar(
           controller: _tabController,
@@ -1142,6 +1466,167 @@ class WithdrawalDetailScreen extends StatelessWidget {
                     ),
                   ),
                   _row('Branch', withdrawal['bank_branch']),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class VerificationDetailScreen extends StatelessWidget {
+  final Map<String, dynamic> verification;
+  const VerificationDetailScreen({super.key, required this.verification});
+
+  Color _statusColor(String? status) {
+    switch (status) {
+      case 'approved': return AppColors.primary;
+      case 'rejected': return Colors.redAccent;
+      default: return Colors.orangeAccent;
+    }
+  }
+
+  Widget _row(String label, String? value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(width: 110, child: Text(label, style: const TextStyle(color: AppColors.hint, fontSize: 13))),
+          Expanded(child: Text(value ?? '—', style: const TextStyle(color: Colors.white, fontSize: 14))),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final status = verification['status']?.toString();
+    return Scaffold(
+      backgroundColor: AppColors.bg,
+      appBar: AppBar(title: const Text('Verification Details')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(color: _statusColor(status).withOpacity(0.15), borderRadius: BorderRadius.circular(20)),
+              child: Text(status?.toUpperCase() ?? '—', style: TextStyle(color: _statusColor(status), fontSize: 13, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('User', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13)),
+                  _row('Name', verification['display_name'] ?? verification['full_name']),
+                  _row('Email', verification['email']),
+                  _row('Phone', verification['phone']),
+                  const SizedBox(height: 12),
+                  const Text('Verification', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13)),
+                  _row('NIC Number', verification['nic_number']),
+                  _row('Address', verification['address']),
+                  _row('Document Type', verification['document_type']),
+                  _row('Submitted', verification['created_at']?.toString()),
+                ],
+              ),
+            ),
+            if ((verification['front_image_url'] ?? '').toString().isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const Text('Front Document', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13)),
+              const SizedBox(height: 8),
+              ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.network(verification['front_image_url'])),
+            ],
+            if ((verification['back_image_url'] ?? '').toString().isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const Text('Back Document', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13)),
+              const SizedBox(height: 8),
+              ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.network(verification['back_image_url'])),
+            ],
+            if ((verification['selfie_image_url'] ?? '').toString().isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const Text('Selfie', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13)),
+              const SizedBox(height: 8),
+              ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.network(verification['selfie_image_url'])),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class EscrowDetailScreen extends StatelessWidget {
+  final Map<String, dynamic> order;
+  const EscrowDetailScreen({super.key, required this.order});
+
+  Color _statusColor(String? status) {
+    switch (status) {
+      case 'completed': return AppColors.primary;
+      case 'refunded': return Colors.redAccent;
+      case 'disputed': return Colors.orangeAccent;
+      default: return AppColors.hint;
+    }
+  }
+
+  Widget _row(String label, String? value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(width: 120, child: Text(label, style: const TextStyle(color: AppColors.hint, fontSize: 13))),
+          Expanded(child: Text(value ?? '—', style: const TextStyle(color: Colors.white, fontSize: 14))),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final status = order['status']?.toString();
+    return Scaffold(
+      backgroundColor: AppColors.bg,
+      appBar: AppBar(title: const Text('Escrow Order Details')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(color: _statusColor(status).withOpacity(0.15), borderRadius: BorderRadius.circular(20)),
+              child: Text(status?.toUpperCase() ?? '—', style: TextStyle(color: _statusColor(status), fontSize: 13, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Listing', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13)),
+                  _row('Title', order['title']),
+                  _row('Price', 'LKR ${order['price']}'),
+                  _row('Seller Payout', 'LKR ${order['sellerPayout']}'),
+                  const SizedBox(height: 12),
+                  const Text('Buyer', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13)),
+                  _row('Name/Email', order['buyerEmail']),
+                  _row('Phone', order['buyerPhone']),
+                  const SizedBox(height: 12),
+                  const Text('Seller', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13)),
+                  _row('Name/Email', order['sellerEmail']),
+                  _row('Phone', order['sellerPhone']),
+                  const SizedBox(height: 12),
+                  const Text('Escrow', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13)),
+                  _row('Release At', order['escrowReleaseAt']?.toString()),
+                  _row('Created', order['createdAt']?.toString()),
                 ],
               ),
             ),
