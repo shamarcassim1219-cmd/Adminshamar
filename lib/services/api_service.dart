@@ -402,6 +402,11 @@ class ApiService {
     await _handle(res);
   }
 
+  static Future<void> resolveProblemReport(int id) async {
+    final res = await http.post(Uri.parse('$baseUrl/admin/problem-reports/$id/resolve'), headers: await _headers());
+    await _handle(res);
+  }
+
   // ---------- SUPPORT REQUESTS ----------
   static Future<List<dynamic>> getSupportRequests() async {
     final res = await http.get(Uri.parse('$baseUrl/admin/support-requests'), headers: await _headers());

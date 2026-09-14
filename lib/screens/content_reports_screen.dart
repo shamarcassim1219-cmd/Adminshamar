@@ -51,6 +51,16 @@ class _ContentReportsScreenState extends State<ContentReportsScreen> {
     }
   }
 
+  Future<void> _resolveProblem(int id) async {
+    try {
+      await ApiService.resolveProblemReport(id);
+      _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))));
+    }
+  }
+
   Future<void> _showBanDialog(int userId, String userLabel) async {
     final reasonCtrl = TextEditingController();
     final confirmed = await showDialog<bool>(
@@ -185,6 +195,44 @@ class _ContentReportsScreenState extends State<ContentReportsScreen> {
                         itemCount: _items.length,
                         itemBuilder: (context, i) {
                           final r = _items[i];
+
+                          if (r['type'] == 'problem') {
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 10),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border)),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Row(
+                                    children: [
+                                      Icon(Icons.report_problem_outlined, size: 16, color: AppColors.primary),
+                                      SizedBox(width: 6),
+                                      Text('Problem Report', style: TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(r['reporter_name'] ?? '—', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                                  if (r['reporter_email'] != null) Text(r['reporter_email'], style: const TextStyle(color: AppColors.hint, fontSize: 12)),
+                                  if (r['reporter_phone'] != null && r['reporter_phone'].toString().isNotEmpty)
+                                    Text('Phone: ${r['reporter_phone']}', style: const TextStyle(color: AppColors.hint, fontSize: 12)),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(color: AppColors.fieldFill, borderRadius: BorderRadius.circular(8)),
+                                    child: Text(r['description'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 13)),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton(onPressed: () => _resolveProblem(r['id']), child: const Text('Mark Resolved')),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
                           final isListing = r['target_type'] == 'listing';
                           final reporter = r['reporter_details'] as Map<String, dynamic>?;
                           final targetUser = r['target_user_details'] as Map<String, dynamic>?;
