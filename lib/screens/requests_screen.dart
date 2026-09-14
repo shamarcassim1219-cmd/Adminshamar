@@ -423,6 +423,7 @@ class _TopupsTabState extends State<_TopupsTab> {
               children: [
                 Text(t['email'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 Text('Requested: LKR ${t['amount']}', style: const TextStyle(color: AppColors.hint, fontSize: 12)),
+                Text('Reference: ${t['reference_number'] ?? '—'}', style: const TextStyle(color: AppColors.hint, fontSize: 12)),
                 if ((t['slip_url'] ?? '').toString().isNotEmpty) ...[
                   const SizedBox(height: 8),
                   InkWell(
