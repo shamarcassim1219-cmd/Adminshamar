@@ -17,6 +17,9 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging || mounted) setState(() {});
+    });
   }
 
   @override
@@ -169,7 +172,8 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
       appBar: AppBar(
         title: const Text('Requests'),
         actions: [
-          IconButton(icon: const Icon(Icons.search), onPressed: _showReferenceSearch, tooltip: 'Search by reference number'),
+          if (_tabController.index == 1)
+            IconButton(icon: const Icon(Icons.search), onPressed: _showReferenceSearch, tooltip: 'Search by reference number'),
         ],
         bottom: TabBar(
           controller: _tabController,
