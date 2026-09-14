@@ -252,6 +252,17 @@ class ApiService {
     return data['users'];
   }
 
+  static Future<List<dynamic>> getActiveSubAdmins() async {
+    final res = await http.get(Uri.parse('$baseUrl/admin/sub-admins/active'), headers: await _headers());
+    final data = await _handle(res);
+    return data['subAdmins'];
+  }
+
+  static Future<void> forceLogoutSubAdmin(int userId) async {
+    final res = await http.post(Uri.parse('$baseUrl/admin/sub-admins/$userId/force-logout'), headers: await _headers());
+    await _handle(res);
+  }
+
   static Future<void> banUser(int id, String reason) async {
     final res = await http.post(
       Uri.parse('$baseUrl/admin/users/$id/ban'),
