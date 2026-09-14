@@ -195,6 +195,15 @@ class ApiService {
     return data['topups'];
   }
 
+  static Future<List<dynamic>> searchTopupByReference(String reference) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/admin/topups/search?reference=${Uri.encodeQueryComponent(reference)}'),
+      headers: await _headers(),
+    );
+    final data = await _handle(res);
+    return data['topups'];
+  }
+
   static Future<void> decideTopup(int id, bool approve, double? adjustedAmount) async {
     final res = await http.post(
       Uri.parse('$baseUrl/admin/topups/$id/decide'),

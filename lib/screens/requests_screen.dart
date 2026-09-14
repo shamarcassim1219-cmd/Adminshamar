@@ -25,12 +25,152 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
     super.dispose();
   }
 
+  void _showReferenceSearch() {
+    final refCtrl = TextEditingController();
+    List<dynamic>? results;
+    bool searching = false;
+    String? error;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          Future<void> search() async {
+            final ref = refCtrl.text.trim();
+            if (ref.isEmpty) return;
+            setSheetState(() {
+              searching = true;
+              error = null;
+              results = null;
+            });
+            try {
+              final data = await ApiService.searchTopupByReference(ref);
+              setSheetState(() {
+                results = data;
+                searching = false;
+              });
+            } catch (e) {
+              setSheetState(() {
+                error = e.toString().replaceFirst('Exception: ', '');
+                searching = false;
+              });
+            }
+          }
+
+          String statusLabel(String? status) {
+            switch (status) {
+              case 'confirmed': return 'Success';
+              case 'rejected': return 'Rejected';
+              case 'pending': return 'Pending';
+              default: return status ?? '—';
+            }
+          }
+
+          Color statusColor(String? status) {
+            switch (status) {
+              case 'confirmed': return AppColors.primary;
+              case 'rejected': return Colors.redAccent;
+              default: return Colors.orangeAccent;
+            }
+          }
+
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 20, right: 20, top: 20,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Search by Reference Number', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: refCtrl,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(hintText: 'Enter bank transfer reference number'),
+                        onSubmitted: (_) => search(),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: searching ? null : search,
+                      child: searching
+                          ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                          : const Text('Search'),
+                    ),
+                  ],
+                ),
+                if (error != null) ...[
+                  const SizedBox(height: 10),
+                  Text(error!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+                ],
+                if (results != null) ...[
+                  const SizedBox(height: 16),
+                  if (results!.isEmpty)
+                    const Text('No top-up request found with this reference number.', style: TextStyle(color: AppColors.hint, fontSize: 13))
+                  else
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: results!.length,
+                        itemBuilder: (context, i) {
+                          final r = results![i];
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(color: AppColors.fieldFill, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border)),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(child: Text(r['display_name'] ?? r['email'] ?? '—', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(color: statusColor(r['status']).withOpacity(0.15), borderRadius: BorderRadius.circular(20)),
+                                      child: Text(statusLabel(r['status']), style: TextStyle(color: statusColor(r['status']), fontSize: 12, fontWeight: FontWeight.bold)),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(r['email'] ?? '', style: const TextStyle(color: AppColors.hint, fontSize: 12)),
+                                const SizedBox(height: 6),
+                                Text('Amount: LKR ${r['amount']}', style: const TextStyle(color: Colors.white, fontSize: 13)),
+                                Text('Reference: ${r['reference_number'] ?? '—'}', style: const TextStyle(color: AppColors.hint, fontSize: 12)),
+                                Text('Date: ${r['created_at'] ?? '—'}', style: const TextStyle(color: AppColors.hint, fontSize: 12)),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         title: const Text('Requests'),
+        actions: [
+          IconButton(icon: const Icon(Icons.search), onPressed: _showReferenceSearch, tooltip: 'Search by reference number'),
+        ],
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppColors.primary,
