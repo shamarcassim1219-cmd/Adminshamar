@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../main.dart';
 import '../services/api_service.dart';
 
@@ -26,6 +27,125 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _showWithdrawalSearch() {
+    final qCtrl = TextEditingController();
+    List<dynamic>? results;
+    bool searching = false;
+    String? error;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          Future<void> search() async {
+            final q = qCtrl.text.trim();
+            if (q.isEmpty) return;
+            setSheetState(() {
+              searching = true;
+              error = null;
+              results = null;
+            });
+            try {
+              final data = await ApiService.searchWithdrawals(q);
+              setSheetState(() {
+                results = data;
+                searching = false;
+              });
+            } catch (e) {
+              setSheetState(() {
+                error = e.toString().replaceFirst('Exception: ', '');
+                searching = false;
+              });
+            }
+          }
+
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 20, right: 20, top: 20,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Search Withdrawals', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
+                const Text('Search by name, phone number, or email', style: TextStyle(color: AppColors.hint, fontSize: 12)),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: qCtrl,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(hintText: 'Name, phone, or email'),
+                        onSubmitted: (_) => search(),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: searching ? null : search,
+                      child: searching
+                          ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                          : const Text('Search'),
+                    ),
+                  ],
+                ),
+                if (error != null) ...[
+                  const SizedBox(height: 10),
+                  Text(error!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+                ],
+                if (results != null) ...[
+                  const SizedBox(height: 16),
+                  if (results!.isEmpty)
+                    const Text('No withdrawals found.', style: TextStyle(color: AppColors.hint, fontSize: 13))
+                  else
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: results!.length,
+                        itemBuilder: (context, i) {
+                          final w = results![i];
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(padding: const EdgeInsets.all(12), alignment: Alignment.centerLeft),
+                              onPressed: () {
+                                Navigator.pop(ctx);
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => WithdrawalDetailScreen(withdrawal: w)));
+                              },
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(w['display_name'] ?? w['email'] ?? '—', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                        Text('LKR ${num.parse(w['amount'].toString()).abs()} — ${w['status']}', style: const TextStyle(color: AppColors.hint, fontSize: 12)),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(Icons.chevron_right, color: AppColors.hint),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 
   void _showReferenceSearch() {
@@ -174,6 +294,8 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
         actions: [
           if (_tabController.index == 1)
             IconButton(icon: const Icon(Icons.search), onPressed: _showReferenceSearch, tooltip: 'Search by reference number'),
+          if (_tabController.index == 2)
+            IconButton(icon: const Icon(Icons.search), onPressed: _showWithdrawalSearch, tooltip: 'Search by name/phone/email'),
         ],
         bottom: TabBar(
           controller: _tabController,
@@ -923,6 +1045,109 @@ class _SupportRequestDetailScreenState extends State<SupportRequestDetailScreen>
                 ),
               ],
             ),
+    );
+  }
+}
+
+class WithdrawalDetailScreen extends StatelessWidget {
+  final Map<String, dynamic> withdrawal;
+  const WithdrawalDetailScreen({super.key, required this.withdrawal});
+
+  String _statusLabel(String? status) {
+    switch (status) {
+      case 'completed': return 'Success';
+      case 'failed': return 'Rejected';
+      case 'pending': return 'Pending';
+      default: return status ?? '—';
+    }
+  }
+
+  Color _statusColor(String? status) {
+    switch (status) {
+      case 'completed': return AppColors.primary;
+      case 'failed': return Colors.redAccent;
+      default: return Colors.orangeAccent;
+    }
+  }
+
+  Widget _row(String label, String? value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(width: 110, child: Text(label, style: const TextStyle(color: AppColors.hint, fontSize: 13))),
+          Expanded(child: Text(value ?? '—', style: const TextStyle(color: Colors.white, fontSize: 14))),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final status = withdrawal['status'];
+    final accountNumber = withdrawal['bank_account_number']?.toString();
+
+    return Scaffold(
+      backgroundColor: AppColors.bg,
+      appBar: AppBar(title: const Text('Withdrawal Details')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(color: _statusColor(status).withOpacity(0.15), borderRadius: BorderRadius.circular(20)),
+              child: Text(_statusLabel(status), style: TextStyle(color: _statusColor(status), fontSize: 13, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('User', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13)),
+                  _row('Name', withdrawal['display_name']),
+                  _row('Email', withdrawal['email']),
+                  _row('Phone', withdrawal['phone']),
+                  const SizedBox(height: 12),
+                  const Text('Withdrawal', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13)),
+                  _row('Amount', 'LKR ${num.parse(withdrawal['amount'].toString()).abs()}'),
+                  _row('Requested', withdrawal['created_at']?.toString()),
+                  const SizedBox(height: 12),
+                  const Text('Bank Details', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13)),
+                  _row('Bank', withdrawal['bank_name']),
+                  _row('Account Name', withdrawal['bank_account_name']),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(width: 110, child: Text('Account No.', style: TextStyle(color: AppColors.hint, fontSize: 13))),
+                        Expanded(child: Text(accountNumber ?? '—', style: const TextStyle(color: Colors.white, fontSize: 14))),
+                        if (accountNumber != null && accountNumber.isNotEmpty)
+                          IconButton(
+                            icon: const Icon(Icons.copy, size: 18, color: AppColors.hint),
+                            tooltip: 'Copy account number',
+                            onPressed: () {
+                              Clipboard.setData(ClipboardData(text: accountNumber));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Account number copied')),
+                              );
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                  _row('Branch', withdrawal['bank_branch']),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

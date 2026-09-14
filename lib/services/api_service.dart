@@ -220,6 +220,12 @@ class ApiService {
     return data['withdrawals'];
   }
 
+  static Future<List<dynamic>> searchWithdrawals(String q) async {
+    final res = await http.get(Uri.parse('$baseUrl/admin/withdrawals/search?q=${Uri.encodeQueryComponent(q)}'), headers: await _headers());
+    final data = await _handle(res);
+    return data['withdrawals'];
+  }
+
   static Future<void> decideWithdrawal(int id, bool approve) async {
     final res = await http.post(
       Uri.parse('$baseUrl/admin/withdrawals/$id/decide'),
