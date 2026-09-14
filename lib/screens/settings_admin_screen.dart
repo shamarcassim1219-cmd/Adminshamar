@@ -34,12 +34,21 @@ class _SettingsAdminScreenState extends State<SettingsAdminScreen> {
   String? _commissionMsg;
   String? _broadcastMsg;
   String? _bankDetailsMsg;
+  String _currentVersion = kFallbackAppVersion;
 
   @override
   void initState() {
     super.initState();
     _loadCommission();
     _loadBankDetails();
+    _loadCurrentVersion();
+  }
+
+  Future<void> _loadCurrentVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (mounted) setState(() => _currentVersion = info.version);
+    } catch (_) {}
   }
 
   Future<void> _loadBankDetails() async {

@@ -5,7 +5,7 @@
   "packages": [
     {
       "name": "mygame_admin_app",
-      "version": "1.0.4+5",
+      "version": "1.0.9+10",
       "dependencies": [
         "cupertino_icons",
         "dio",
@@ -17,6 +17,7 @@
         "http",
         "image_picker",
         "open_filex",
+        "package_info_plus",
         "path_provider",
         "shared_preferences",
         "url_launcher"
@@ -1025,6 +1026,38 @@
       "dependencies": [
         "collection",
         "meta"
+      ]
+    },
+    {
+      "name": "package_info_plus",
+      "version": "8.3.1",
+      "dependencies": [
+        "clock",
+        "ffi",
+        "flutter",
+        "flutter_web_plugins",
+        "http",
+        "meta",
+        "package_info_plus_platform_interface",
+        "path",
+        "web",
+        "win32"
+      ]
+    },
+    {
+      "name": "package_info_plus_platform_interface",
+      "version": "3.2.1",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "win32",
+      "version": "5.15.0",
+      "dependencies": [
+        "ffi"
       ]
     }
   ],
